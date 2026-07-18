@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Antony Paul — Embedded Systems & IoT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a1512;
+    --bg-raised:#0f1e19;
+    --panel:#122620;
+    --line:#1d3a30;
+    --copper:#c9922f;
+    --copper-bright:#e8b04a;
+    --signal:#49d9c2;
+    --text:#e7ede9;
+    --text-dim:#8fa89c;
+    --text-faint:#5a7168;
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+    --sans: 'IBM Plex Sans', system-ui, sans-serif;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+
+  html{scroll-behavior:smooth;}
+
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.6;
+    overflow-x:hidden;
+  }
+
+  a{color:inherit;}
+
+  ::selection{background:var(--copper); color:#0a1512;}
+
+  :focus-visible{
+    outline:2px solid var(--signal);
+    outline-offset:3px;
+  }
+
+  .grain-overlay{
+    position:fixed; inset:0; pointer-events:none; z-index:1;
+    background:radial-gradient(ellipse at 20% 0%, rgba(73,217,194,0.05), transparent 55%),
+               radial-gradient(ellipse at 80% 100%, rgba(201,146,47,0.06), transparent 55%);
+  }
+
+  #ripple-bg{
+    position:fixed; inset:0; z-index:0; background:var(--bg);
+  }
+  #ripple-bg canvas{ display:block; width:100%; height:100%; }
+
+  .wrap{
+    max-width:960px;
+    margin:0 auto;
+    padding:0 28px;
+    position:relative;
+    z-index:2;
+  }
+
+  /* ---------- NAV ---------- */
+  header.nav{
+    position:sticky; top:0; z-index:50;
+    background:rgba(10,21,18,0.82);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-inner{
+    max-width:960px; margin:0 auto; padding:16px 28px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .nav-mark{
+    font-family:var(--mono); font-size:14px; font-weight:600;
+    letter-spacing:0.06em; color:var(--copper-bright);
+    display:flex; align-items:center; gap:8px;
+  }
+  .nav-mark .dot{
+    width:8px; height:8px; border-radius:50%;
+    background:var(--signal);
+    box-shadow:0 0 8px var(--signal);
+    animation:blink 2.4s ease-in-out infinite;
+  }
+  @keyframes blink{0%,100%{opacity:1;} 50%{opacity:0.35;}}
+  nav.links{display:flex; gap:26px; font-family:var(--mono); font-size:12.5px;}
+  nav.links a{
+    color:var(--text-dim); text-decoration:none; letter-spacing:0.04em;
+    padding:4px 0; border-bottom:1px solid transparent;
+    transition:color .2s, border-color .2s;
+  }
+  nav.links a:hover{color:var(--copper-bright); border-color:var(--copper);}
+  @media (max-width:640px){ nav.links{display:none;} }
+
+  /* ---------- SIGNAL TRACE (signature element) ---------- */
+  .trace{
+    position:absolute; left:0; top:0; bottom:0; width:64px;
+    pointer-events:none; z-index:0;
+    display:none;
+  }
+  @media (min-width:900px){ .trace{display:block; left:calc(50% - 480px - 12px);} }
+  .trace svg{position:sticky; top:0; height:100vh; width:64px;}
+
+  /* ---------- HERO ---------- */
+  .hero{ padding:96px 0 80px; position:relative; }
+  .hero-eyebrow{
+    font-family:var(--mono); font-size:12.5px; color:var(--signal);
+    letter-spacing:0.12em; margin-bottom:18px; display:flex; align-items:center; gap:10px;
+  }
+  .hero-eyebrow::before{
+    content:''; width:22px; height:1px; background:var(--signal);
+  }
+  h1.name{
+    font-family:var(--mono); font-weight:700;
+    font-size:clamp(38px, 7vw, 64px);
+    letter-spacing:-0.01em;
+    color:var(--text);
+    line-height:1.05;
+  }
+  h1.name .surname{color:var(--copper-bright);}
+  .role{
+    font-size:clamp(17px, 2.4vw, 21px);
+    color:var(--text-dim);
+    margin-top:14px;
+    max-width:560px;
+    font-weight:300;
+  }
+  .summary{
+    margin-top:28px; max-width:580px; color:var(--text-dim);
+    font-size:15px; line-height:1.75;
+    border-left:2px solid var(--copper);
+    padding-left:18px;
+  }
+  .contact-row{
+    margin-top:36px; display:flex; flex-wrap:wrap; gap:12px;
+  }
+  .pill{
+    font-family:var(--mono); font-size:12.5px; color:var(--text-dim);
+    border:1px solid var(--line); padding:8px 14px; border-radius:3px;
+    display:flex; align-items:center; gap:8px;
+    background:var(--bg-raised);
+  }
+  .pill svg{width:13px; height:13px; stroke:var(--signal); flex-shrink:0;}
+
+  /* ---------- SECTION SCAFFOLDING ---------- */
+  section{ padding:64px 0; position:relative; }
+  .section-head{
+    display:flex; align-items:baseline; gap:16px; margin-bottom:38px;
+  }
+  .section-num{ font-family:var(--mono); font-size:12px; color:var(--copper); }
+  .section-title{
+    font-family:var(--mono); font-size:22px; font-weight:600;
+    letter-spacing:-0.01em; color:var(--text);
+    text-transform:uppercase;
+  }
+  .section-rule{
+    flex:1; height:1px;
+    background:linear-gradient(90deg, var(--line), transparent);
+  }
+
+  /* ---------- TIMELINE (education / internships) ---------- */
+  .tl-item{
+    display:grid; grid-template-columns:100px 1fr; gap:20px;
+    padding:22px 0; border-top:1px solid var(--line);
+  }
+  .tl-item:first-child{border-top:1px solid var(--line);}
+  .tl-year{
+    font-family:var(--mono); font-size:13px; color:var(--copper-bright);
+    padding-top:2px;
+  }
+  .tl-org{ font-weight:600; font-size:15.5px; color:var(--text); }
+  .tl-role{ font-size:13.5px; color:var(--signal); font-family:var(--mono); margin-top:2px; }
+  .tl-place{ font-size:13px; color:var(--text-faint); margin-top:2px; }
+  .tl-item ul{ margin-top:10px; padding-left:18px; color:var(--text-dim); font-size:14px; }
+  .tl-item li{ margin-top:6px; }
+  @media (max-width:600px){
+    .tl-item{grid-template-columns:1fr;}
+    .tl-year{padding-top:0;}
+  }
+
+  /* ---------- PROJECT GRID ---------- */
+  .proj-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:1px;
+    background:var(--line); border:1px solid var(--line);
+  }
+  @media (max-width:700px){ .proj-grid{grid-template-columns:1fr;} }
+  .proj-card{
+    background:var(--bg-raised); padding:26px; position:relative;
+    transition:background .25s;
+  }
+  .proj-card:hover{ background:var(--panel); }
+  .proj-card::before{
+    content:''; position:absolute; top:0; left:0; width:0; height:2px;
+    background:var(--copper-bright); transition:width .3s;
+  }
+  .proj-card:hover::before{ width:100%; }
+  .proj-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .proj-title{ font-weight:600; font-size:15.5px; color:var(--text); }
+  .proj-year{ font-family:var(--mono); font-size:11.5px; color:var(--copper); white-space:nowrap; }
+  .proj-desc{ margin-top:12px; font-size:13.8px; color:var(--text-dim); }
+  .proj-tags{ margin-top:16px; display:flex; flex-wrap:wrap; gap:6px; }
+  .tag{
+    font-family:var(--mono); font-size:10.5px; color:var(--signal);
+    border:1px solid rgba(73,217,194,0.3); padding:3px 8px; border-radius:2px;
+  }
+
+  /* ---------- PARKING DEMO LAUNCH BUTTON ---------- */
+  .proj-card--interactive{ padding-bottom:22px; }
+  .proj-demo-btn{
+    margin-top:18px; display:inline-flex; align-items:center; gap:8px;
+    font-family:var(--mono); font-size:11.5px; font-weight:600; letter-spacing:0.03em;
+    color:#0a1512; background:var(--signal); border:none; padding:9px 14px;
+    border-radius:3px; cursor:pointer; transition:transform .2s, box-shadow .2s;
+  }
+  .proj-demo-btn:hover{ transform:translateY(-1px); box-shadow:0 6px 18px rgba(73,217,194,0.28); }
+  .proj-demo-btn:active{ transform:translateY(0) scale(0.97); }
+  .proj-demo-dot{
+    width:6px; height:6px; border-radius:50%; background:#0a1512;
+    animation:blink 1.6s ease-in-out infinite;
+  }
+
+  /* ---------- PARKING DEMO MODAL ---------- */
+  .pk-modal-backdrop{
+    position:fixed; inset:0; z-index:200; background:rgba(6,12,10,0.72);
+    backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center;
+    padding:20px; opacity:0; pointer-events:none; transition:opacity .25s ease;
+  }
+  .pk-modal-backdrop.open{ opacity:1; pointer-events:auto; }
+  .pk-modal{
+    width:100%; max-width:720px; max-height:92vh; overflow:auto;
+    background:var(--bg-raised); border:1px solid var(--line); border-radius:6px;
+    box-shadow:0 24px 70px rgba(0,0,0,0.55); transform:translateY(16px) scale(0.98); opacity:0;
+    transition:transform .32s cubic-bezier(.16,1,.3,1), opacity .32s ease;
+  }
+  .pk-modal-backdrop.open .pk-modal{ transform:translateY(0) scale(1); opacity:1; }
+  .pk-modal-head{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:16px 20px; border-bottom:1px solid var(--line);
+  }
+  .pk-modal-title{
+    font-family:var(--mono); font-size:13px; font-weight:600; color:var(--text);
+    letter-spacing:0.04em; display:flex; align-items:center; gap:9px;
+  }
+  .pk-modal-title .dot{ width:7px; height:7px; border-radius:50%; background:var(--signal); box-shadow:0 0 7px var(--signal); animation:blink 2.2s ease-in-out infinite; }
+  .pk-modal-close, .pk-mute{
+    width:28px; height:28px; display:flex; align-items:center; justify-content:center;
+    border:1px solid var(--line); background:var(--panel); color:var(--text-dim);
+    cursor:pointer; border-radius:3px; font-family:var(--mono); font-size:13px;
+    transition:border-color .2s, color .2s;
+  }
+  .pk-modal-close:hover, .pk-mute:hover{ border-color:var(--signal); color:var(--signal); }
+  .pk-head-actions{ display:flex; gap:8px; }
+
+  .pk-body{ padding:18px 20px 22px; }
+  .pk-stage{
+    position:relative; width:100%; aspect-ratio:16/9; background:
+      radial-gradient(circle at 15% 15%, rgba(73,217,194,0.07), transparent 50%),
+      radial-gradient(circle at 85% 85%, rgba(201,146,47,0.07), transparent 50%), #0c1a16;
+    border:1px solid var(--line); border-radius:4px; overflow:hidden;
+  }
+  .pk-grid-bg{
+    position:absolute; inset:0; opacity:0.5;
+    background-image:linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:32px 32px;
+  }
+
+  .pk-road{ position:absolute; left:0; top:44%; width:34%; height:14%; background:#0f1e19; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+  .pk-road::before, .pk-road::after{ content:''; position:absolute; top:50%; left:0; right:0; height:2px; transform:translateY(-50%); background-image:repeating-linear-gradient(90deg, var(--text-faint) 0 10px, transparent 10px 20px); opacity:0.5; }
+
+  .pk-gate-post{ position:absolute; width:5px; height:20%; background:var(--line); left:26%; top:38%; border-radius:2px; }
+  .pk-gate-arm{
+    position:absolute; left:26%; top:38%; width:11%; height:3px; background:var(--copper-bright);
+    transform-origin:0% 50%; transform:rotate(0deg); transition:transform .5s cubic-bezier(.4,0,.2,1);
+    box-shadow:0 0 6px rgba(232,176,74,0.5); border-radius:2px;
+  }
+  .pk-gate-arm.open{ transform:rotate(-72deg); }
+
+  .pk-sensor{
+    position:absolute; width:10px; height:10px; border-radius:3px; background:var(--panel);
+    border:1px solid var(--line); left:23%; top:60%; transition:background .3s, box-shadow .3s;
+  }
+  .pk-sensor.ir{ left:23%; }
+  .pk-sensor.rfid{ left:19.5%; border-radius:50%; }
+  .pk-sensor.active{ background:var(--signal); box-shadow:0 0 10px var(--signal); }
+  .pk-sensor.rfid.active{ background:var(--copper-bright); box-shadow:0 0 10px var(--copper-bright); }
+
+  .pk-lcd{
+    position:absolute; left:2%; top:8%; width:20%; min-width:120px; background:#04211a;
+    border:1px solid var(--line); border-radius:3px; padding:7px 9px;
+    font-family:var(--mono); font-size:10px; line-height:1.6; color:#8fffc4;
+    box-shadow:inset 0 0 10px rgba(0,0,0,0.5);
+  }
+  .pk-lcd .l2{ color:#67c9a4; }
+
+  .pk-slot{
+    position:absolute; width:11%; height:20%; border:1.5px dashed var(--line); border-radius:3px;
+    display:flex; align-items:flex-end; justify-content:center; padding-bottom:6px;
+  }
+  .pk-slot-dot{ width:8px; height:8px; border-radius:50%; transition:background .4s, box-shadow .4s; }
+  .pk-slot-label{ position:absolute; top:5px; left:6px; font-family:var(--mono); font-size:9px; color:var(--text-faint); }
+  .pk-slot.free .pk-slot-dot{ background:var(--signal); box-shadow:0 0 6px var(--signal); }
+  .pk-slot.occupied .pk-slot-dot{ background:#e05a5a; box-shadow:0 0 6px #e05a5a; }
+
+  .pk-car{
+    position:absolute; width:34px; height:17px; left:0; top:0;
+    background:linear-gradient(180deg, #e7ede9, #b9c4bd); border-radius:5px;
+    box-shadow:0 3px 8px rgba(0,0,0,0.4); transition:transform 1.1s cubic-bezier(.4,0,.2,1);
+    transform:translate(-60px, 200px) rotate(0deg); opacity:0;
+  }
+  .pk-car::before{ content:''; position:absolute; top:2px; left:7px; right:7px; height:6px; background:#0f1e19; border-radius:2px; }
+  .pk-car .headlight{ position:absolute; top:5px; right:-1px; width:3px; height:3px; border-radius:50%; background:#fff; box-shadow:0 0 4px #fff; }
+
+  .pk-spark{ position:absolute; width:4px; height:4px; border-radius:50%; pointer-events:none; }
+
+  .pk-panel{ margin-top:16px; display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line); border:1px solid var(--line); }
+  @media (max-width:560px){ .pk-panel{ grid-template-columns:repeat(2,1fr); } }
+  .pk-metric{ background:var(--bg-raised); padding:12px 14px; }
+  .pk-metric-label{ font-family:var(--mono); font-size:9.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-faint); }
+  .pk-metric-value{ font-family:var(--mono); font-size:19px; font-weight:600; color:var(--text); margin-top:3px; transition:transform .25s; }
+  .pk-metric-value.bump{ transform:scale(1.22); color:var(--copper-bright); }
+
+  .pk-controls{ margin-top:16px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .pk-btn{
+    font-family:var(--mono); font-size:12px; font-weight:600; padding:10px 16px;
+    border-radius:3px; cursor:pointer; letter-spacing:0.03em; transition:transform .2s, box-shadow .2s, opacity .2s;
+    border:1px solid transparent;
+  }
+  .pk-btn:active{ transform:scale(0.96); }
+  .pk-btn-primary{ background:var(--copper-bright); color:#0a1512; }
+  .pk-btn-primary:hover{ box-shadow:0 6px 18px rgba(232,176,74,0.28); transform:translateY(-1px); }
+  .pk-btn-primary:disabled{ opacity:0.4; cursor:not-allowed; transform:none; box-shadow:none; }
+  .pk-btn-ghost{ background:var(--panel); border-color:var(--line); color:var(--text-dim); }
+  .pk-btn-ghost:hover{ border-color:var(--signal); color:var(--signal); }
+  .pk-status-line{ font-family:var(--mono); font-size:11px; color:var(--text-faint); margin-left:auto; }
+  .pk-status-line b{ color:var(--signal); }
+
+  @media (prefers-reduced-motion: reduce){
+    .pk-gate-arm, .pk-car, .pk-modal, .pk-modal-backdrop{ transition:none !important; }
+  }
+
+  /* ---------- SKILLS ---------- */
+  .skills-grid{ display:grid; grid-template-columns:repeat(2, 1fr); gap:22px; }
+  @media (max-width:640px){ .skills-grid{grid-template-columns:1fr;} }
+  .skill-block{ border:1px solid var(--line); background:var(--bg-raised); padding:20px; }
+  .skill-label{
+    font-family:var(--mono); font-size:11.5px; color:var(--copper-bright);
+    text-transform:uppercase; letter-spacing:0.08em; margin-bottom:12px;
+  }
+  .skill-chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip{
+    font-size:13px; color:var(--text-dim); background:var(--panel);
+    border:1px solid var(--line); padding:6px 11px; border-radius:2px;
+  }
+
+  /* ---------- CERTS / ACHIEVEMENTS ---------- */
+  .two-col{ display:grid; grid-template-columns:1fr 1fr; gap:40px; }
+  @media (max-width:700px){ .two-col{grid-template-columns:1fr;} }
+  .list-item{
+    padding:14px 0; border-top:1px solid var(--line);
+    font-size:14px; color:var(--text-dim);
+  }
+  .list-item b{ color:var(--text); font-weight:600; }
+  .list-item .tag-mini{
+    font-family:var(--mono); font-size:11px; color:var(--copper); display:block; margin-top:4px;
+  }
+
+  /* ---------- WORK LOG / CALENDAR ---------- */
+  .cal-shell{
+    border:1px solid var(--line); background:var(--bg-raised);
+    display:grid; grid-template-columns:1fr 300px;
+  }
+  @media (max-width:760px){ .cal-shell{grid-template-columns:1fr;} }
+
+  .cal-main{ padding:24px; border-right:1px solid var(--line); }
+  @media (max-width:760px){ .cal-main{border-right:none; border-bottom:1px solid var(--line);} }
+
+  .cal-header{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:20px;
+  }
+  .cal-month{
+    font-family:var(--mono); font-size:15px; font-weight:600;
+    color:var(--text); letter-spacing:0.03em;
+  }
+  .cal-month .yr{ color:var(--copper); }
+  .cal-nav{ display:flex; gap:8px; }
+  .cal-nav-btn{
+    width:30px; height:30px; display:flex; align-items:center; justify-content:center;
+    border:1px solid var(--line); background:var(--panel); color:var(--text-dim);
+    cursor:pointer; border-radius:3px; font-family:var(--mono); font-size:14px;
+    transition:border-color .2s, color .2s;
+  }
+  .cal-nav-btn:hover{ border-color:var(--signal); color:var(--signal); }
+
+  .cal-weekdays, .cal-grid{
+    display:grid; grid-template-columns:repeat(7, 1fr); gap:6px;
+  }
+  .cal-weekdays{ margin-bottom:8px; }
+  .cal-wd{
+    font-family:var(--mono); font-size:10.5px; text-align:center;
+    color:var(--text-faint); text-transform:uppercase; letter-spacing:0.06em;
+    padding-bottom:4px;
+  }
+  .cal-day{
+    aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:4px; border:1px solid var(--line); border-radius:3px; background:var(--panel);
+    color:var(--text-dim); font-family:var(--mono); font-size:12.5px; cursor:pointer;
+    position:relative; transition:border-color .2s, background .2s, color .2s;
+  }
+  .cal-day:hover{ border-color:var(--copper); color:var(--text); }
+  .cal-day.empty{ visibility:hidden; cursor:default; }
+  .cal-day.today{ border-color:var(--copper); color:var(--copper-bright); font-weight:600; }
+  .cal-day.selected{ background:var(--copper); color:#0a1512; border-color:var(--copper-bright); font-weight:600; }
+  .cal-day.selected:hover{ color:#0a1512; }
+  .cal-day-dot{
+    width:5px; height:5px; border-radius:50%; background:var(--signal);
+    box-shadow:0 0 5px var(--signal);
+  }
+  .cal-day.selected .cal-day-dot{ background:#0a1512; box-shadow:none; }
+
+  .cal-side{ padding:24px; display:flex; flex-direction:column; }
+  .cal-side-date{
+    font-family:var(--mono); font-size:13px; color:var(--copper-bright);
+    letter-spacing:0.03em; margin-bottom:14px;
+  }
+  .cal-textarea{
+    width:100%; resize:vertical; min-height:64px; background:var(--panel);
+    border:1px solid var(--line); color:var(--text); font-family:var(--sans);
+    font-size:13.5px; padding:10px; border-radius:3px; line-height:1.5;
+  }
+  .cal-textarea:focus{ border-color:var(--signal); outline:none; }
+  .cal-add-btn{
+    margin-top:10px; align-self:flex-start; background:var(--signal); color:#0a1512;
+    border:none; font-family:var(--mono); font-size:12px; font-weight:600;
+    padding:9px 16px; border-radius:3px; cursor:pointer; transition:transform .2s;
+  }
+  .cal-add-btn:hover{ transform:translateY(-1px); }
+  .cal-entries{ margin-top:20px; display:flex; flex-direction:column; gap:10px; overflow-y:auto; max-height:220px; }
+  .cal-entry{
+    border:1px solid var(--line); border-left:2px solid var(--signal); background:var(--panel);
+    padding:10px 12px; border-radius:0 3px 3px 0; position:relative;
+  }
+  .cal-entry-text{ font-size:13px; color:var(--text-dim); padding-right:20px; word-break:break-word; }
+  .cal-entry-del{
+    position:absolute; top:8px; right:8px; background:none; border:none;
+    color:var(--text-faint); cursor:pointer; font-family:var(--mono); font-size:13px; line-height:1;
+  }
+  .cal-entry-del:hover{ color:var(--copper-bright); }
+  .cal-empty-note{ font-size:12.5px; color:var(--text-faint); font-style:italic; margin-top:14px; }
+  .cal-note{
+    margin-top:16px; font-size:11.5px; color:var(--text-faint); font-family:var(--mono);
+    border-top:1px solid var(--line); padding-top:12px; line-height:1.6;
+  }
+
+  /* ---------- CONTACT / FOOTER ---------- */
+  .contact-section{ text-align:left; padding:80px 0 60px; }
+  .contact-section .section-title-lg{
+    font-family:var(--mono); font-weight:700;
+    font-size:clamp(28px,5vw,44px); color:var(--text);
+    max-width:600px; line-height:1.2;
+  }
+  .contact-section .section-title-lg .accent{ color:var(--signal); }
+  .contact-actions{ margin-top:32px; display:flex; flex-wrap:wrap; gap:14px; }
+  .btn{
+    font-family:var(--mono); font-size:13px; padding:13px 22px;
+    border-radius:3px; text-decoration:none; letter-spacing:0.03em;
+    display:inline-flex; align-items:center; gap:8px;
+    transition:transform .2s, box-shadow .2s;
+  }
+  .btn-primary{ background:var(--copper-bright); color:#0a1512; font-weight:600; }
+  .btn-primary:hover{ transform:translateY(-2px); box-shadow:0 8px 24px rgba(232,176,74,0.25); }
+  .btn-ghost{ border:1px solid var(--line); color:var(--text-dim); }
+  .btn-ghost:hover{ border-color:var(--signal); color:var(--signal); }
+
+  footer{
+    border-top:1px solid var(--line); padding:26px 0; margin-top:20px;
+    font-family:var(--mono); font-size:11.5px; color:var(--text-faint);
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    .nav-mark .dot{animation:none;}
+    * { transition:none !important; animation:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="ripple-bg"></div>
+<div class="grain-overlay"></div>
+
+<header class="nav">
+  <div class="nav-inner">
+    <div class="nav-mark"><span class="dot"></span>AP // ECE</div>
+    <nav class="links">
+      <a href="#about">About</a>
+      <a href="#path">Path</a>
+      <a href="#projects">Projects</a>
+      <a href="#skills">Skills</a>
+      <a href="#worklog">Work Log</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<div class="trace" aria-hidden="true">
+  <svg viewBox="0 0 64 800" preserveAspectRatio="none" fill="none">
+    <path d="M32 0 V180 Q32 200 52 200 H64" stroke="#1d3a30" stroke-width="2"/>
+    <path d="M32 0 V180 Q32 200 52 200 H64" stroke="#c9922f" stroke-width="2" stroke-dasharray="6 10" opacity="0.6"/>
+    <circle cx="32" cy="180" r="4" fill="#49d9c2"/>
+    <path d="M32 200 V420 Q32 440 12 440 H0" stroke="#1d3a30" stroke-width="2"/>
+    <circle cx="32" cy="420" r="4" fill="#49d9c2"/>
+    <path d="M32 440 V620 Q32 640 52 640 H64" stroke="#1d3a30" stroke-width="2"/>
+    <circle cx="32" cy="620" r="4" fill="#49d9c2"/>
+    <path d="M32 640 V800" stroke="#1d3a30" stroke-width="2"/>
+  </svg>
+</div>
+
+<main class="wrap">
+
+  <!-- HERO -->
+  <section class="hero" id="top">
+    <div class="hero-eyebrow">FINAL-YEAR B.TECH · ELECTRONICS &amp; COMMUNICATION</div>
+    <h1 class="name">Antony <span class="surname">Paul</span></h1>
+    <p class="role">Embedded systems &amp; IoT builder — microcontrollers, sensor fusion, and the firmware that connects them to the cloud.</p>
+    <p class="summary">
+      Third-year (final-year track) Electronics &amp; Communication Engineering student specialising in embedded systems, IoT frameworks, and digital hardware. Currently in advanced IoT training at IIIT Kottayam under a Government of India flagship scheme, with hands-on exposure to automated system design, sensor fusion, and real-time data diagnostics.
+    </p>
+    <div class="contact-row">
+      <span class="pill">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        Thrissur, Kerala, India
+      </span>
+      <span class="pill">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .3 2 .7 3a2 2 0 0 1-.4 2.1L8 10.5a16 16 0 0 0 6 6l1.6-1.6a2 2 0 0 1 2-.5c1 .4 2 .6 3 .7a2 2 0 0 1 1.7 2Z"/></svg>
+        +91 90618 84897
+      </span>
+      <span class="pill">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
+        antonypaul23ec@cce.edu.in
+      </span>
+    </div>
+  </section>
+
+  <!-- ABOUT / EDUCATION -->
+  <section id="about">
+    <div class="section-head">
+      <span class="section-num">01</span>
+      <span class="section-title">Education</span>
+      <span class="section-rule"></span>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-year">2023–2027</div>
+      <div>
+        <div class="tl-org">B.Tech, Electronics &amp; Communication Engineering</div>
+        <div class="tl-place">Christ College of Engineering, Irinjalakuda, Kerala · affiliated to APJ Abdul Kalam Technological University</div>
+        <ul><li>Current CGPA: 7.0 / 10, up to semester 4</li></ul>
+      </div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-year">2023</div>
+      <div>
+        <div class="tl-org">Higher Secondary (Class XII), CBSE</div>
+        <div class="tl-place">Nirmala Matha Central School, Thrissur, Kerala</div>
+        <ul><li>Aggregate: 78%</li></ul>
+      </div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-year">2021</div>
+      <div>
+        <div class="tl-org">Secondary School Examination (Class X), CBSE</div>
+        <div class="tl-place">Nirmala Matha Central School, Thrissur, Kerala</div>
+        <ul><li>Aggregate: 93%</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- INTERNSHIPS -->
+  <section id="path">
+    <div class="section-head">
+      <span class="section-num">02</span>
+      <span class="section-title">Industry Internships</span>
+      <span class="section-rule"></span>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-year">Jun 2026<br>6 weeks</div>
+      <div>
+        <div class="tl-org">Indian Institute of Information Technology (IIIT) Kottayam</div>
+        <div class="tl-role">IoT Intern — PM-VIKAS Scheme, Ministry of Minority Affairs, Govt. of India</div>
+        <ul>
+          <li>Selected for advanced hands-on IoT training under the PM-VIKAS skill-development flagship initiative</li>
+          <li>Core training in IoT architecture design, multi-sensor interfacing, I2C/UART protocols, and cloud monitoring frameworks</li>
+          <li>Building end-to-end device deployment skills: sensor firmware compilation, data transmission logic, and cloud integration</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-year">2 weeks</div>
+      <div>
+        <div class="tl-org">TORC Infotech, Kochi, Kerala</div>
+        <div class="tl-role">IoT &amp; Home Automation Intern</div>
+        <ul>
+          <li>15-day intensive offline training in smart architecture, peripheral sensor mapping, and ecosystem protocols</li>
+          <li>Hands-on with microcontroller programming, sensor array configuration, and hardware communication nodes</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-year">2 weeks</div>
+      <div>
+        <div class="tl-org">CSEED, Thrissur, Kerala</div>
+        <div class="tl-role">Embedded Systems Intern</div>
+        <ul>
+          <li>Hardware and firmware development track focused on low-level peripheral interfacing and real-time embedded design</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section id="projects">
+    <div class="section-head">
+      <span class="section-num">03</span>
+      <span class="section-title">Academic Projects</span>
+      <span class="section-rule"></span>
+    </div>
+
+    <div class="proj-grid">
+      <div class="proj-card">
+        <div class="proj-top"><span class="proj-title">Secure Pass Toll Gate System</span><span class="proj-year">2026</span></div>
+        <p class="proj-desc">Automated smart toll collection prototype with an IR sensor framework and mechanised entry barrier, driven by a Raspberry Pi Pico. Firmware evaluates card reads and pushes live ledger updates via a Google Sheets AppScript integration.</p>
+        <div class="proj-tags"><span class="tag">Raspberry Pi Pico</span><span class="tag">IR Sensing</span><span class="tag">AppScript</span></div>
+      </div>
+
+      <div class="proj-card proj-card--interactive" id="parkingCard">
+        <div class="proj-top"><span class="proj-title">Smart Parking System</span><span class="proj-year">2025</span></div>
+        <p class="proj-desc">Intelligent space-allocation and monitoring application managed via a centralised Raspberry Pi 4, tracking available parking slots dynamically in real time.</p>
+        <div class="proj-tags"><span class="tag">Raspberry Pi 4</span><span class="tag">Automation</span></div>
+        <button class="proj-demo-btn" id="parkingLaunch" type="button">
+          <span class="proj-demo-dot"></span> Launch live demo
+        </button>
+      </div>
+
+      <div class="proj-card">
+        <div class="proj-top"><span class="proj-title">Thermo-Responsive Ventilation System</span><span class="proj-year">2025</span></div>
+        <p class="proj-desc">Analog thermal sensor feedback interfaced with motor drivers to automatically modulate fan speed based on real-time temperature readings.</p>
+        <div class="proj-tags"><span class="tag">Thermal Sensing</span><span class="tag">Motor Control</span></div>
+      </div>
+
+      <div class="proj-card">
+        <div class="proj-top"><span class="proj-title">Rain-Safe Clothesline</span><span class="proj-year">2024</span></div>
+        <p class="proj-desc">Electromechanical automation module that uses moisture-detection thresholds to trigger motor-driven protective shields automatically.</p>
+        <div class="proj-tags"><span class="tag">Moisture Sensing</span><span class="tag">Electromechanical</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SMART PARKING INTERACTIVE DEMO -->
+  <div class="pk-modal-backdrop" id="pkBackdrop">
+    <div class="pk-modal" role="dialog" aria-modal="true" aria-labelledby="pkTitle">
+      <div class="pk-modal-head">
+        <div class="pk-modal-title" id="pkTitle"><span class="dot"></span>Smart Parking — Live Digital Twin</div>
+        <div class="pk-head-actions">
+          <button class="pk-mute" id="pkMute" type="button" aria-label="Toggle sound">🔊</button>
+          <button class="pk-modal-close" id="pkClose" type="button" aria-label="Close">✕</button>
+        </div>
+      </div>
+      <div class="pk-body">
+        <div class="pk-stage" id="pkStage">
+          <div class="pk-grid-bg"></div>
+
+          <div class="pk-road"></div>
+          <div class="pk-gate-post"></div>
+          <div class="pk-gate-arm" id="pkGateArm"></div>
+          <div class="pk-sensor ir" id="pkIr" title="IR break-beam sensor"></div>
+          <div class="pk-sensor rfid" id="pkRfid" title="RC522 RFID reader"></div>
+
+          <div class="pk-lcd" id="pkLcd">
+            <div class="l1" id="pkLcdL1">SMART PARKING</div>
+            <div class="l2" id="pkLcdL2">Ready</div>
+          </div>
+
+          <div class="pk-slot" id="pkSlot1" style="left:60%; top:12%;"><span class="pk-slot-label">A1</span><span class="pk-slot-dot"></span></div>
+          <div class="pk-slot" id="pkSlot2" style="left:78%; top:12%;"><span class="pk-slot-label">A2</span><span class="pk-slot-dot"></span></div>
+          <div class="pk-slot" id="pkSlot3" style="left:60%; top:64%;"><span class="pk-slot-label">B1</span><span class="pk-slot-dot"></span></div>
+          <div class="pk-slot" id="pkSlot4" style="left:78%; top:64%;"><span class="pk-slot-label">B2</span><span class="pk-slot-dot"></span></div>
+
+          <div class="pk-car" id="pkCar"><span class="headlight"></span></div>
+        </div>
+
+        <div class="pk-panel">
+          <div class="pk-metric"><div class="pk-metric-label">Available</div><div class="pk-metric-value" id="pkAvail">4</div></div>
+          <div class="pk-metric"><div class="pk-metric-label">Occupied</div><div class="pk-metric-value" id="pkOcc">0</div></div>
+          <div class="pk-metric"><div class="pk-metric-label">Entered</div><div class="pk-metric-value" id="pkEntered">0</div></div>
+          <div class="pk-metric"><div class="pk-metric-label">Exited</div><div class="pk-metric-value" id="pkExited">0</div></div>
+        </div>
+
+        <div class="pk-controls">
+          <button class="pk-btn pk-btn-primary" id="pkSpawn" type="button">Spawn Car</button>
+          <button class="pk-btn pk-btn-ghost" id="pkExit" type="button">Simulate Exit</button>
+          <button class="pk-btn pk-btn-ghost" id="pkReset" type="button">Reset Lot</button>
+          <span class="pk-status-line">Status: <b id="pkStatus">Online</b></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SKILLS -->
+  <section id="skills">
+    <div class="section-head">
+      <span class="section-num">04</span>
+      <span class="section-title">Skills</span>
+      <span class="section-rule"></span>
+    </div>
+
+    <div class="skills-grid">
+      <div class="skill-block">
+        <div class="skill-label">Hardware &amp; Microcontrollers</div>
+        <div class="skill-chips">
+          <span class="chip">Raspberry Pi 4</span>
+          <span class="chip">Raspberry Pi Pico</span>
+          <span class="chip">Arduino</span>
+          <span class="chip">Semiconductor Devices</span>
+          <span class="chip">MOSFETs</span>
+          <span class="chip">Diodes</span>
+          <span class="chip">IR / Moisture / Thermal Sensors</span>
+        </div>
+      </div>
+      <div class="skill-block">
+        <div class="skill-label">Programming &amp; Software</div>
+        <div class="skill-chips">
+          <span class="chip">C</span>
+          <span class="chip">Python</span>
+          <span class="chip">MATLAB</span>
+        </div>
+      </div>
+      <div class="skill-block">
+        <div class="skill-label">Simulation &amp; Tools</div>
+        <div class="skill-chips">
+          <span class="chip">LTSpice</span>
+          <span class="chip">Proteus Simulation</span>
+        </div>
+      </div>
+      <div class="skill-block">
+        <div class="skill-label">Languages</div>
+        <div class="skill-chips">
+          <span class="chip">English — Fluent</span>
+          <span class="chip">Malayalam — Native</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WORK LOG -->
+  <section id="worklog">
+    <div class="section-head">
+      <span class="section-num">05</span>
+      <span class="section-title">Work Log</span>
+      <span class="section-rule"></span>
+    </div>
+    <p style="color:var(--text-dim); font-size:14px; max-width:560px; margin-bottom:24px;">
+      A running build log — click a day to note what got done, debugged, or soldered.
+    </p>
+
+    <div class="cal-shell">
+      <div class="cal-main">
+        <div class="cal-header">
+          <button class="cal-nav-btn" id="calPrev" aria-label="Previous month">‹</button>
+          <div class="cal-month" id="calMonthLabel"></div>
+          <button class="cal-nav-btn" id="calNext" aria-label="Next month">›</button>
+        </div>
+        <div class="cal-weekdays">
+          <div class="cal-wd">Su</div><div class="cal-wd">Mo</div><div class="cal-wd">Tu</div>
+          <div class="cal-wd">We</div><div class="cal-wd">Th</div><div class="cal-wd">Fr</div><div class="cal-wd">Sa</div>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+      <div class="cal-side">
+        <div class="cal-side-date" id="calSelectedLabel">Select a day</div>
+        <textarea class="cal-textarea" id="calInput" placeholder="What did you work on today? e.g. Debugged I2C sensor read on the Pico..."></textarea>
+        <button class="cal-add-btn" id="calAddBtn">+ Log progress</button>
+        <div class="cal-entries" id="calEntries"></div>
+        <p class="cal-note">Entries are kept in this browser tab for the current session. Once you host the page, ask me to wire up persistent storage so logs are saved for good.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CERTIFICATIONS + ACHIEVEMENTS -->
+  <section>
+    <div class="section-head">
+      <span class="section-num">06</span>
+      <span class="section-title">Certifications &amp; Achievements</span>
+      <span class="section-rule"></span>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <div class="list-item"><b>Raspberry Pi and Embedded Systems</b><span class="tag-mini">One-week intensive workshop — Christ College of Engineering</span></div>
+        <div class="list-item"><b>PCB Design and Fabrication</b><span class="tag-mini">Three-day workshop — Neo Green Labs, Christ College of Engineering</span></div>
+        <div class="list-item"><b>Electronic Product Building</b><span class="tag-mini">Two-day hands-on workshop — Christ College of Engineering</span></div>
+        <div class="list-item"><b>Solar Photovoltaic Systems</b><span class="tag-mini">Hands-on technical training — Christ College of Engineering</span></div>
+      </div>
+      <div>
+        <div class="list-item"><b>Winner — Best Prototype</b><span class="tag-mini">National Level Engineering Competition (3rd Edition), SAE India</span></div>
+        <div class="list-item"><b>Project Participant</b><span class="tag-mini">e-Yantra National-Level Robotics &amp; Embedded Systems Competition, hosted by IIT Bombay</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact" class="contact-section">
+    <div class="section-head">
+      <span class="section-num">07</span>
+      <span class="section-title">Contact</span>
+      <span class="section-rule"></span>
+    </div>
+    <h2 class="section-title-lg">Building the next embedded prototype? <span class="accent">Let's connect.</span></h2>
+    <div class="contact-actions">
+      <a class="btn btn-primary" href="mailto:antonypaul23ec@cce.edu.in">Email me →</a>
+      <a class="btn btn-ghost" href="tel:+919061884897">Call +91 90618 84897</a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <span>© 2026 Antony Paul — Christ College of Engineering</span>
+  <span>Built for opportunities in embedded systems &amp; IoT</span>
+</footer>
+
+<script type="module">
+import { Renderer, Program, Triangle, Mesh } from 'https://cdn.jsdelivr.net/npm/ogl@1.0.6/+esm';
+
+(function(){
+  const container = document.getElementById('ripple-bg');
+  if(!container) return;
+
+  const cfg = {
+    enableRainbow: false,
+    gridColor: '#49d9c2',      // matches --signal, swap for --copper #c9922f if you want warm instead
+    rippleIntensity: 0.05,
+    gridSize: 14.0,
+    gridThickness: 30.0,
+    fadeDistance: 3.0,
+    vignetteStrength: 0.8,
+    glowIntensity: 0.08,
+    opacity: 0.3,
+    gridRotation: 0,
+    mouseInteraction: true,
+    mouseInteractionRadius: 0.8
+  };
+
+  const hexToRgb = hex => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result
+      ? [parseInt(result[1], 16) / 255, parseInt(result[2], 16) / 255, parseInt(result[3], 16) / 255]
+      : [1, 1, 1];
+  };
+
+  const renderer = new Renderer({ dpr: Math.min(window.devicePixelRatio, 2), alpha: true });
+  const gl = renderer.gl;
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.canvas.style.width = '100%';
+  gl.canvas.style.height = '100%';
+  container.appendChild(gl.canvas);
+
+  const vert = `
+attribute vec2 position;
+varying vec2 vUv;
+void main() {
+    vUv = position * 0.5 + 0.5;
+    gl_Position = vec4(position, 0.0, 1.0);
+}`;
+
+  const frag = `precision highp float;
+uniform float iTime;
+uniform vec2 iResolution;
+uniform bool enableRainbow;
+uniform vec3 gridColor;
+uniform float rippleIntensity;
+uniform float gridSize;
+uniform float gridThickness;
+uniform float fadeDistance;
+uniform float vignetteStrength;
+uniform float glowIntensity;
+uniform float opacity;
+uniform float gridRotation;
+uniform bool mouseInteraction;
+uniform vec2 mousePosition;
+uniform float mouseInfluence;
+uniform float mouseInteractionRadius;
+varying vec2 vUv;
+
+float pi = 3.141592;
+
+mat2 rotate(float angle) {
+    float s = sin(angle);
+    float c = cos(angle);
+    return mat2(c, -s, s, c);
+}
+
+void main() {
+    vec2 uv = vUv * 2.0 - 1.0;
+    uv.x *= iResolution.x / iResolution.y;
+
+    if (gridRotation != 0.0) {
+        uv = rotate(gridRotation * pi / 180.0) * uv;
+    }
+
+    float dist = length(uv);
+    float func = sin(pi * (iTime - dist));
+    vec2 rippleUv = uv + uv * func * rippleIntensity;
+
+    if (mouseInteraction && mouseInfluence > 0.0) {
+        vec2 mouseUv = (mousePosition * 2.0 - 1.0);
+        mouseUv.x *= iResolution.x / iResolution.y;
+        float mouseDist = length(uv - mouseUv);
+
+        float influence = mouseInfluence * exp(-mouseDist * mouseDist / (mouseInteractionRadius * mouseInteractionRadius));
+
+        float mouseWave = sin(pi * (iTime * 2.0 - mouseDist * 3.0)) * influence;
+        rippleUv += normalize(uv - mouseUv) * mouseWave * rippleIntensity * 0.3;
+    }
+
+    vec2 a = sin(gridSize * 0.5 * pi * rippleUv - pi / 2.0);
+    vec2 b = abs(a);
+
+    float aaWidth = 0.5;
+    vec2 smoothB = vec2(
+        smoothstep(0.0, aaWidth, b.x),
+        smoothstep(0.0, aaWidth, b.y)
+    );
+
+    vec3 color = vec3(0.0);
+    color += exp(-gridThickness * smoothB.x * (0.8 + 0.5 * sin(pi * iTime)));
+    color += exp(-gridThickness * smoothB.y);
+    color += 0.5 * exp(-(gridThickness / 4.0) * sin(smoothB.x));
+    color += 0.5 * exp(-(gridThickness / 3.0) * smoothB.y);
+
+    if (glowIntensity > 0.0) {
+        color += glowIntensity * exp(-gridThickness * 0.5 * smoothB.x);
+        color += glowIntensity * exp(-gridThickness * 0.5 * smoothB.y);
+    }
+
+    float ddd = 1.0;
+    float vignette = 1.0;
+
+    vec3 t;
+    if (enableRainbow) {
+        t = vec3(
+            uv.x * 0.5 + 0.5 * sin(iTime),
+            uv.y * 0.5 + 0.5 * cos(iTime),
+            pow(cos(iTime), 4.0)
+        ) + 0.5;
+    } else {
+        t = gridColor;
+    }
+
+    float finalFade = ddd * vignette;
+    float alpha = length(color) * finalFade * opacity;
+    gl_FragColor = vec4(color * t * finalFade * opacity, alpha);
+}`;
+
+  const uniforms = {
+    iTime: { value: 0 },
+    iResolution: { value: [1, 1] },
+    enableRainbow: { value: cfg.enableRainbow },
+    gridColor: { value: hexToRgb(cfg.gridColor) },
+    rippleIntensity: { value: cfg.rippleIntensity },
+    gridSize: { value: cfg.gridSize },
+    gridThickness: { value: cfg.gridThickness },
+    fadeDistance: { value: cfg.fadeDistance },
+    vignetteStrength: { value: cfg.vignetteStrength },
+    glowIntensity: { value: cfg.glowIntensity },
+    opacity: { value: cfg.opacity },
+    gridRotation: { value: cfg.gridRotation },
+    mouseInteraction: { value: cfg.mouseInteraction },
+    mousePosition: { value: [0.5, 0.5] },
+    mouseInfluence: { value: 0 },
+    mouseInteractionRadius: { value: cfg.mouseInteractionRadius }
+  };
+
+  const geometry = new Triangle(gl);
+  const program = new Program(gl, { vertex: vert, fragment: frag, uniforms });
+  const mesh = new Mesh(gl, { geometry, program });
+
+  const mousePositionRef = { x: 0.5, y: 0.5 };
+  const targetMouseRef = { x: 0.5, y: 0.5 };
+  let mouseInfluenceTarget = 0;
+
+  const resize = () => {
+    const w = container.clientWidth, h = container.clientHeight;
+    renderer.setSize(w, h);
+    uniforms.iResolution.value = [w, h];
+  };
+
+  const handleMouseMove = e => {
+    if (!cfg.mouseInteraction) return;
+    const rect = container.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = 1.0 - (e.clientY - rect.top) / rect.height;
+    targetMouseRef.x = x;
+    targetMouseRef.y = y;
+  };
+
+  window.addEventListener('resize', resize);
+  window.addEventListener('mousemove', handleMouseMove);
+  mouseInfluenceTarget = 1.0;
+  resize();
+
+  const render = t => {
+    uniforms.iTime.value = t * 0.001;
+
+    const lerpFactor = 0.1;
+    mousePositionRef.x += (targetMouseRef.x - mousePositionRef.x) * lerpFactor;
+    mousePositionRef.y += (targetMouseRef.y - mousePositionRef.y) * lerpFactor;
+
+    uniforms.mouseInfluence.value += (mouseInfluenceTarget - uniforms.mouseInfluence.value) * 0.05;
+    uniforms.mousePosition.value = [mousePositionRef.x, mousePositionRef.y];
+
+    renderer.render({ scene: mesh });
+    requestAnimationFrame(render);
+  };
+  requestAnimationFrame(render);
+})();
+</script>
+
+<script>
+(function(){
+  const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const entries = {}; // { 'YYYY-MM-DD': [ {text, time} ] }  -- in-memory for this session
+
+  const today = new Date();
+  let viewYear = today.getFullYear();
+  let viewMonth = today.getMonth(); // 0-indexed
+  let selectedKey = dateKey(today.getFullYear(), today.getMonth(), today.getDate());
+
+  const grid = document.getElementById('calGrid');
+  const monthLabel = document.getElementById('calMonthLabel');
+  const selectedLabel = document.getElementById('calSelectedLabel');
+  const input = document.getElementById('calInput');
+  const addBtn = document.getElementById('calAddBtn');
+  const entriesWrap = document.getElementById('calEntries');
+
+  function dateKey(y, m, d){
+    return y + '-' + String(m+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+  }
+
+  function formatSelected(key){
+    const [y,m,d] = key.split('-').map(Number);
+    const dt = new Date(y, m-1, d);
+    return dt.toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+  }
+
+  function renderMonth(){
+    monthLabel.innerHTML = MONTH_NAMES[viewMonth] + ' <span class="yr">' + viewYear + '</span>';
+    grid.innerHTML = '';
+
+    const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+    for(let i=0; i<firstDay; i++){
+      const filler = document.createElement('div');
+      filler.className = 'cal-day empty';
+      grid.appendChild(filler);
+    }
+
+    for(let d=1; d<=daysInMonth; d++){
+      const key = dateKey(viewYear, viewMonth, d);
+      const cell = document.createElement('div');
+      cell.className = 'cal-day';
+      if(key === dateKey(today.getFullYear(), today.getMonth(), today.getDate())) cell.classList.add('today');
+      if(key === selectedKey) cell.classList.add('selected');
+
+      const num = document.createElement('span');
+      num.textContent = d;
+      cell.appendChild(num);
+
+      if(entries[key] && entries[key].length){
+        const dot = document.createElement('span');
+        dot.className = 'cal-day-dot';
+        cell.appendChild(dot);
+      }
+
+      cell.addEventListener('click', () => {
+        selectedKey = key;
+        renderMonth();
+        renderEntries();
+      });
+
+      grid.appendChild(cell);
+    }
+  }
+
+  function renderEntries(){
+    selectedLabel.textContent = formatSelected(selectedKey);
+    entriesWrap.innerHTML = '';
+    const list = entries[selectedKey] || [];
+
+    if(!list.length){
+      const empty = document.createElement('p');
+      empty.className = 'cal-empty-note';
+      empty.textContent = 'No progress logged for this day yet.';
+      entriesWrap.appendChild(empty);
+      return;
+    }
+
+    list.forEach((entry, idx) => {
+      const item = document.createElement('div');
+      item.className = 'cal-entry';
+
+      const del = document.createElement('button');
+      del.className = 'cal-entry-del';
+      del.textContent = '×';
+      del.setAttribute('aria-label', 'Delete entry');
+      del.addEventListener('click', () => {
+        entries[selectedKey].splice(idx, 1);
+        renderMonth();
+        renderEntries();
+      });
+
+      const text = document.createElement('div');
+      text.className = 'cal-entry-text';
+      text.textContent = entry.text;
+
+      item.appendChild(del);
+      item.appendChild(text);
+      entriesWrap.appendChild(item);
+    });
+  }
+
+  addBtn.addEventListener('click', () => {
+    const val = input.value.trim();
+    if(!val) return;
+    if(!entries[selectedKey]) entries[selectedKey] = [];
+    entries[selectedKey].push({ text: val, time: new Date().toISOString() });
+    input.value = '';
+    renderMonth();
+    renderEntries();
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter' && (e.metaKey || e.ctrlKey)){
+      addBtn.click();
+    }
+  });
+
+  document.getElementById('calPrev').addEventListener('click', () => {
+    viewMonth--;
+    if(viewMonth < 0){ viewMonth = 11; viewYear--; }
+    renderMonth();
+  });
+  document.getElementById('calNext').addEventListener('click', () => {
+    viewMonth++;
+    if(viewMonth > 11){ viewMonth = 0; viewYear++; }
+    renderMonth();
+  });
+
+  renderMonth();
+  renderEntries();
+})();
+</script>
+
+<script>
+(function(){
+  const backdrop = document.getElementById('pkBackdrop');
+  const stage = document.getElementById('pkStage');
+  const launchBtn = document.getElementById('parkingLaunch');
+  const closeBtn = document.getElementById('pkClose');
+  const muteBtn = document.getElementById('pkMute');
+  const gateArm = document.getElementById('pkGateArm');
+  const ir = document.getElementById('pkIr');
+  const rfid = document.getElementById('pkRfid');
+  const lcdL1 = document.getElementById('pkLcdL1');
+  const lcdL2 = document.getElementById('pkLcdL2');
+  const car = document.getElementById('pkCar');
+  const spawnBtn = document.getElementById('pkSpawn');
+  const exitBtn = document.getElementById('pkExit');
+  const resetBtn = document.getElementById('pkReset');
+  const statusEl = document.getElementById('pkStatus');
+  const availEl = document.getElementById('pkAvail');
+  const occEl = document.getElementById('pkOcc');
+  const enteredEl = document.getElementById('pkEntered');
+  const exitedEl = document.getElementById('pkExited');
+
+  const slotEls = [1,2,3,4].map(n => document.getElementById('pkSlot' + n));
+  let slots = slotEls.map((el, i) => ({ el, id: i, occupied: false }));
+  let counts = { entered: 0, exited: 0 };
+  let busy = false;
+  let muted = false;
+  let audioCtx = null;
+
+  const wait = ms => new Promise(res => setTimeout(res, ms));
+
+  // ---------- sound: tiny synth beeps, no audio files needed ----------
+  function beep(freq, dur, type){
+    if (muted) return;
+    try{
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type || 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.14, audioCtx.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + (dur || 0.15));
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + (dur || 0.15) + 0.02);
+    }catch(e){ /* audio unsupported, fail silently */ }
+  }
+
+  // ---------- LCD typewriter ----------
+  function typeLine(el, text, speed){
+    return new Promise(resolve => {
+      el.textContent = '';
+      let i = 0;
+      const id = setInterval(() => {
+        i++;
+        el.textContent = text.slice(0, i);
+        if (i >= text.length){ clearInterval(id); resolve(); }
+      }, speed || 26);
+    });
+  }
+  function setLcd(l1, l2){
+    return Promise.all([typeLine(lcdL1, l1), typeLine(lcdL2, l2)]);
+  }
+
+  // ---------- geometry helpers ----------
+  function centerOf(el){
+    const s = stage.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    return { x: r.left - s.left + r.width / 2, y: r.top - s.top + r.height / 2 };
+  }
+  function placeCar(x, y, deg, animated){
+    car.style.transition = animated === false ? 'none' : 'transform 1.1s cubic-bezier(.4,0,.2,1)';
+    car.style.transform = `translate(${x - 17}px, ${y - 8.5}px) rotate(${deg}deg)`;
+  }
+
+  // ---------- confetti burst on successful park ----------
+  function burst(x, y){
+    const colors = ['#49d9c2', '#e8b04a', '#c9922f', '#8fa89c'];
+    for (let i = 0; i < 14; i++){
+      const s = document.createElement('span');
+      s.className = 'pk-spark';
+      s.style.left = x + 'px';
+      s.style.top = y + 'px';
+      s.style.background = colors[i % colors.length];
+      stage.appendChild(s);
+      const angle = (Math.PI * 2 * i) / 14 + Math.random() * 0.4;
+      const dist = 30 + Math.random() * 26;
+      const dx = Math.cos(angle) * dist;
+      const dy = Math.sin(angle) * dist;
+      const anim = s.animate(
+        [
+          { transform: 'translate(0,0) scale(1)', opacity: 1 },
+          { transform: `translate(${dx}px, ${dy}px) scale(0.3)`, opacity: 0 },
+        ],
+        { duration: 620 + Math.random() * 200, easing: 'cubic-bezier(.2,.8,.3,1)' }
+      );
+      anim.onfinish = () => s.remove();
+    }
+  }
+
+  // ---------- counter bump animation ----------
+  function bump(el, value){
+    el.textContent = value;
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+    setTimeout(() => el.classList.remove('bump'), 250);
+  }
+
+  function refreshCounts(){
+    const occupied = slots.filter(s => s.occupied).length;
+    bump(availEl, slots.length - occupied);
+    bump(occEl, occupied);
+    bump(enteredEl, counts.entered);
+    bump(exitedEl, counts.exited);
+  }
+
+  function setStatus(text){ statusEl.textContent = text; }
+
+  // ---------- main spawn sequence ----------
+  async function spawnCar(){
+    if (busy) return;
+    const free = slots.find(s => !s.occupied);
+    if (!free){
+      await setLcd('LOT FULL', 'No space free');
+      beep(180, 0.25, 'square');
+      return;
+    }
+
+    busy = true;
+    spawnBtn.disabled = true;
+    setStatus('Processing');
+
+    const road = centerOf(document.querySelector('.pk-road'));
+    const roadY = road.y;
+    const gateX = centerOf(gateArm).x + 6;
+    const slotCenter = centerOf(free.el);
+
+    placeCar(-60, roadY, 0, false);
+    car.style.opacity = '1';
+    void car.offsetWidth;
+
+    await setLcd('Approaching', 'Please wait');
+    placeCar(gateX, roadY, 0);
+    await wait(1250);
+
+    ir.classList.add('active');
+    await setLcd('Vehicle Detected', 'Ready to Scan');
+    await wait(450);
+
+    rfid.classList.add('active');
+    await setLcd('Scanning Card', 'RFID: 13.56MHz');
+    beep(520, 0.1, 'sine');
+    await wait(850);
+
+    beep(760, 0.12, 'sine');
+    await setLcd('Card Accepted', 'Opening Gate');
+    gateArm.classList.add('open');
+    ir.classList.remove('active');
+    rfid.classList.remove('active');
+    await wait(650);
+
+    placeCar(gateX + 70, roadY, 0);
+    await wait(600);
+    gateArm.classList.remove('open');
+
+    placeCar(slotCenter.x, roadY, 0);
+    await wait(650);
+
+    const facingDown = slotCenter.y > roadY;
+    placeCar(slotCenter.x, slotCenter.y, facingDown ? 90 : -90);
+    await wait(750);
+
+    free.occupied = true;
+    free.el.classList.add('occupied');
+    free.el.classList.remove('free');
+    counts.entered++;
+    refreshCounts();
+    beep(880, 0.16, 'triangle');
+    burst(slotCenter.x, slotCenter.y);
+    await setLcd(`Available : ${slots.length - slots.filter(s=>s.occupied).length}`, `Slot ${free.el.querySelector('.pk-slot-label').textContent} Occupied`);
+
+    await wait(500);
+    car.style.transition = 'opacity .4s ease';
+    car.style.opacity = '0';
+    busy = false;
+    spawnBtn.disabled = false;
+    setStatus('Online');
+  }
+
+  function exitCar(){
+    if (busy) return;
+    const occupied = slots.filter(s => s.occupied);
+    if (!occupied.length){
+      setLcd('No cars parked', 'Nothing to exit');
+      return;
+    }
+    const target = occupied[Math.floor(Math.random() * occupied.length)];
+    target.occupied = false;
+    target.el.classList.remove('occupied');
+    target.el.classList.add('free');
+    counts.exited++;
+    refreshCounts();
+    beep(340, 0.14, 'sine');
+    burst(centerOf(target.el).x, centerOf(target.el).y);
+    setLcd(`Available : ${slots.length - slots.filter(s=>s.occupied).length}`, `Slot ${target.el.querySelector('.pk-slot-label').textContent} Freed`);
+  }
+
+  function resetLot(){
+    slots.forEach(s => { s.occupied = false; s.el.classList.remove('occupied'); s.el.classList.add('free'); });
+    counts = { entered: 0, exited: 0 };
+    refreshCounts();
+    car.style.transition = 'none';
+    car.style.opacity = '0';
+    gateArm.classList.remove('open');
+    setLcd('SMART PARKING', 'Ready');
+    setStatus('Online');
+  }
+
+  // ---------- modal open/close ----------
+  function openModal(){
+    backdrop.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => {
+      slots.forEach(s => s.el.classList.add('free'));
+      resetLot();
+    });
+  }
+  function closeModal(){
+    backdrop.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  launchBtn.addEventListener('click', openModal);
+  document.getElementById('parkingCard').addEventListener('click', (e) => {
+    if (e.target === launchBtn || launchBtn.contains(e.target)) return;
+  });
+  closeBtn.addEventListener('click', closeModal);
+  backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && backdrop.classList.contains('open')) closeModal(); });
+
+  muteBtn.addEventListener('click', () => {
+    muted = !muted;
+    muteBtn.textContent = muted ? '🔇' : '🔊';
+  });
+
+  spawnBtn.addEventListener('click', spawnCar);
+  exitBtn.addEventListener('click', exitCar);
+  resetBtn.addEventListener('click', resetLot);
+
+  window.addEventListener('resize', () => {
+    if (!busy) car.style.opacity = '0';
+  });
+})();
+</script>
+
+</body>
+</html>
