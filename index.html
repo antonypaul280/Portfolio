@@ -105,11 +105,6 @@
 
   /* ---------- HERO ---------- */
   .hero{ padding:96px 0 80px; position:relative; }
-  .fluid-glass{
-    position:absolute; top:-30px; right:-20px; width:300px; height:300px;
-    z-index:1; display:none; cursor:pointer;
-  }
-  @media (min-width:1080px){ .fluid-glass{ display:block; } }
   .hero-eyebrow{
     font-family:var(--mono); font-size:12.5px; color:var(--signal);
     letter-spacing:0.12em; margin-bottom:18px; display:flex; align-items:center; gap:10px;
@@ -313,7 +308,6 @@
 
   <!-- HERO -->
   <section class="hero" id="top">
-    <canvas id="fluidGlass" class="fluid-glass" aria-hidden="true"></canvas>
     <div class="hero-eyebrow">FINAL-YEAR B.TECH · ELECTRONICS &amp; COMMUNICATION</div>
     <h1 class="name">Antony <span class="surname">Paul</span></h1>
     <p class="role">Embedded systems &amp; IoT builder — microcontrollers, sensor fusion, and the firmware that connects them to the cloud.</p>
@@ -739,146 +733,6 @@ void main() {
     requestAnimationFrame(render);
   };
   requestAnimationFrame(render);
-})();
-</script>
-
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-  }
-}
-</script>
-
-<script type="module">
-import * as THREE from "three";
-import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
-
-// Vanilla-three.js take on the "FluidGlass" effect: a real transmissive glass
-// lens (native MeshPhysicalMaterial transmission, no drei/GLB needed) floating
-// over a soft animated color field, drifting on its own and nudging toward the
-// pointer when it's nearby. Purely decorative, self-contained, zero deps.
-(function(){
-  const canvas = document.getElementById('fluidGlass');
-  if (!canvas || !window.WebGLRenderingContext) return;
-
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 20);
-  camera.position.set(0, 0, 6);
-
-  // Studio-style environment map so the glass has something believable to reflect/refract.
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-
-  // Soft animated colour field behind the lens — this is what the glass refracts.
-  const fieldGeo = new THREE.PlaneGeometry(9, 9, 1, 1);
-  const fieldMat = new THREE.ShaderMaterial({
-    uniforms: { uTime: { value: 0 } },
-    vertexShader: `
-      varying vec2 vUv;
-      void main(){
-        vUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }
-    `,
-    fragmentShader: `
-      varying vec2 vUv;
-      uniform float uTime;
-      void main(){
-        vec2 p = vUv - 0.5;
-        float t = uTime * 0.15;
-        vec3 teal = vec3(0.286, 0.851, 0.761);
-        vec3 copper = vec3(0.910, 0.690, 0.290);
-        vec3 base = vec3(0.035, 0.08, 0.07);
-        float a = sin((p.x + t) * 3.5) * 0.5 + 0.5;
-        float b = cos((p.y - t * 1.3) * 3.0) * 0.5 + 0.5;
-        vec3 col = mix(base, teal, a * 0.5) + copper * (b * 0.16);
-        float vign = smoothstep(0.75, 0.1, length(p));
-        gl_FragColor = vec4(col * vign, 1.0);
-      }
-    `,
-  });
-  const field = new THREE.Mesh(fieldGeo, fieldMat);
-  field.position.z = -2.2;
-  scene.add(field);
-
-  // The glass lens itself.
-  const lens = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(1, 6),
-    new THREE.MeshPhysicalMaterial({
-      transmission: 1,
-      roughness: 0.04,
-      thickness: 2.4,
-      ior: 1.2,
-      color: 0xffffff,
-      attenuationColor: new THREE.Color('#49d9c2'),
-      attenuationDistance: 0.5,
-      clearcoat: 1,
-      clearcoatRoughness: 0.08,
-      envMapIntensity: 1.1,
-    })
-  );
-  scene.add(lens);
-
-  const key = new THREE.DirectionalLight(0xffffff, 1.2);
-  key.position.set(3, 4, 5);
-  scene.add(key);
-  scene.add(new THREE.AmbientLight(0x8fd4c9, 0.3));
-
-  let hover = false;
-  let pointerX = 0, pointerY = 0;
-  const clock = new THREE.Clock();
-
-  function resize(){
-    const rect = canvas.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) return;
-    renderer.setSize(rect.width, rect.height, false);
-    camera.aspect = rect.width / rect.height;
-    camera.updateProjectionMatrix();
-  }
-
-  canvas.addEventListener('pointermove', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    pointerX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    pointerY = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
-    hover = true;
-  });
-  canvas.addEventListener('pointerleave', () => { hover = false; });
-
-  let visible = true;
-  document.addEventListener('visibilitychange', () => { visible = !document.hidden; });
-
-  function tick(){
-    requestAnimationFrame(tick);
-    if (!visible) return;
-    const t = clock.getElapsedTime();
-    fieldMat.uniforms.uTime.value = t;
-
-    const idleX = Math.sin(t * 0.5) * 0.35;
-    const idleY = Math.cos(t * 0.4) * 0.25;
-    const targetX = hover ? pointerX * 0.9 : idleX;
-    const targetY = hover ? pointerY * 0.7 : idleY;
-
-    lens.position.x += (targetX - lens.position.x) * 0.06;
-    lens.position.y += (targetY - lens.position.y) * 0.06;
-    lens.rotation.y += 0.0035;
-    lens.rotation.x += 0.0018;
-    const targetScale = hover ? 1.08 : 1;
-    lens.scale.setScalar(lens.scale.x + (targetScale - lens.scale.x) * 0.08);
-
-    renderer.render(scene, camera);
-  }
-
-  const ro = new ResizeObserver(resize);
-  ro.observe(canvas);
-  resize();
-  tick();
 })();
 </script>
 
