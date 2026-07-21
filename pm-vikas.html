@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PM-VIKAS Work Log — Antony Paul</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a1512;
+    --bg-raised:#0f1e19;
+    --panel:#122620;
+    --line:#1d3a30;
+    --copper:#c9922f;
+    --copper-bright:#e8b04a;
+    --signal:#49d9c2;
+    --text:#e7ede9;
+    --text-dim:#8fa89c;
+    --text-faint:#5a7168;
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+    --sans: 'IBM Plex Sans', system-ui, sans-serif;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:
+      radial-gradient(circle at 15% 0%, rgba(73,217,194,0.06), transparent 45%),
+      radial-gradient(circle at 90% 20%, rgba(201,146,47,0.05), transparent 40%),
+      var(--bg);
+    color:var(--text); font-family:var(--sans); line-height:1.6; min-height:100vh;
+  }
+  a{color:inherit;}
+  ::selection{background:var(--copper); color:#0a1512;}
+  :focus-visible{ outline:2px solid var(--signal); outline-offset:3px; }
+
+  .wrap{ max-width:960px; margin:0 auto; padding:0 24px; }
+
+  header.nav{
+    position:sticky; top:0; z-index:50; backdrop-filter:blur(10px);
+    background:rgba(10,21,18,0.75); border-bottom:1px solid var(--line);
+  }
+  .nav-inner{ max-width:960px; margin:0 auto; padding:18px 24px; display:flex; align-items:center; justify-content:space-between; }
+  .nav-mark{ font-family:var(--mono); font-weight:600; font-size:14px; letter-spacing:0.05em; color:var(--text); display:flex; align-items:center; gap:8px; }
+  .nav-mark .dot{ width:7px; height:7px; border-radius:50%; background:var(--signal); box-shadow:0 0 8px var(--signal); animation:blink 2.4s ease-in-out infinite; }
+  @keyframes blink{0%,100%{opacity:1;} 50%{opacity:0.35;}}
+  .back-link{
+    font-family:var(--mono); font-size:12.5px; color:var(--text-dim); text-decoration:none;
+    display:flex; align-items:center; gap:7px; transition:color .2s;
+  }
+  .back-link:hover{ color:var(--signal); }
+
+  .page-head{ padding:56px 0 36px; }
+  .eyebrow{
+    font-family:var(--mono); font-size:12px; color:var(--signal); letter-spacing:0.12em;
+    display:flex; align-items:center; gap:10px; margin-bottom:16px; text-transform:uppercase;
+  }
+  .eyebrow::before{ content:''; width:22px; height:1px; background:var(--signal); }
+  h1{
+    font-family:var(--mono); font-weight:700; font-size:clamp(28px, 5vw, 42px);
+    letter-spacing:-0.01em; color:var(--text); line-height:1.15;
+  }
+  h1 .accent{ color:var(--copper-bright); }
+  .lede{ margin-top:16px; max-width:620px; color:var(--text-dim); font-size:15px; line-height:1.75; }
+
+  .meta-row{ margin-top:24px; display:flex; flex-wrap:wrap; gap:10px; }
+  .meta-pill{
+    display:inline-flex; align-items:center; gap:7px; font-family:var(--mono); font-size:11.5px;
+    color:var(--text-dim); border:1px solid var(--line); background:var(--panel);
+    padding:7px 12px; border-radius:3px;
+  }
+  .meta-pill b{ color:var(--copper-bright); font-weight:600; }
+
+  section{ padding:20px 0 64px; }
+
+  /* ---------- WORK LOG / CALENDAR (identical to the main site) ---------- */
+  .cal-shell{
+    border:1px solid var(--line); background:var(--bg-raised);
+    display:grid; grid-template-columns:1fr 300px;
+  }
+  @media (max-width:760px){ .cal-shell{grid-template-columns:1fr;} }
+
+  .cal-main{ padding:24px; border-right:1px solid var(--line); }
+  @media (max-width:760px){ .cal-main{border-right:none; border-bottom:1px solid var(--line);} }
+
+  .cal-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+  .cal-month{ font-family:var(--mono); font-size:15px; font-weight:600; color:var(--text); letter-spacing:0.03em; }
+  .cal-month .yr{ color:var(--copper); }
+  .cal-nav-btn{
+    width:30px; height:30px; display:flex; align-items:center; justify-content:center;
+    border:1px solid var(--line); background:var(--panel); color:var(--text-dim);
+    cursor:pointer; border-radius:3px; font-family:var(--mono); font-size:14px;
+    transition:border-color .2s, color .2s;
+  }
+  .cal-nav-btn:hover{ border-color:var(--signal); color:var(--signal); }
+
+  .cal-weekdays, .cal-grid{ display:grid; grid-template-columns:repeat(7, 1fr); gap:6px; }
+  .cal-weekdays{ margin-bottom:8px; }
+  .cal-wd{
+    font-family:var(--mono); font-size:10.5px; text-align:center; color:var(--text-faint);
+    text-transform:uppercase; letter-spacing:0.06em; padding-bottom:4px;
+  }
+  .cal-day{
+    aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:4px; border:1px solid var(--line); border-radius:3px; background:var(--panel);
+    color:var(--text-dim); font-family:var(--mono); font-size:12.5px; cursor:pointer;
+    position:relative; transition:border-color .2s, background .2s, color .2s;
+  }
+  .cal-day:hover{ border-color:var(--copper); color:var(--text); }
+  .cal-day.empty{ visibility:hidden; cursor:default; }
+  .cal-day.today{ border-color:var(--copper); color:var(--copper-bright); font-weight:600; }
+  .cal-day.selected{ background:var(--copper); color:#0a1512; border-color:var(--copper-bright); font-weight:600; }
+  .cal-day.selected:hover{ color:#0a1512; }
+  .cal-day-dot{ width:5px; height:5px; border-radius:50%; background:var(--signal); box-shadow:0 0 5px var(--signal); }
+  .cal-day.selected .cal-day-dot{ background:#0a1512; box-shadow:none; }
+
+  .cal-side{ padding:24px; display:flex; flex-direction:column; }
+  .cal-side-date{ font-family:var(--mono); font-size:13px; color:var(--copper-bright); letter-spacing:0.03em; margin-bottom:14px; }
+  .cal-textarea{
+    width:100%; resize:vertical; min-height:64px; background:var(--panel);
+    border:1px solid var(--line); color:var(--text); font-family:var(--sans);
+    font-size:13.5px; padding:10px; border-radius:3px; line-height:1.5;
+  }
+  .cal-textarea:focus{ border-color:var(--signal); outline:none; }
+  .cal-add-btn{
+    margin-top:10px; align-self:flex-start; background:var(--signal); color:#0a1512;
+    border:none; font-family:var(--mono); font-size:12px; font-weight:600;
+    padding:9px 16px; border-radius:3px; cursor:pointer; transition:transform .2s;
+  }
+  .cal-add-btn:hover{ transform:translateY(-1px); }
+  .cal-entries{ margin-top:20px; display:flex; flex-direction:column; gap:10px; overflow-y:auto; max-height:220px; }
+  .cal-entry{
+    border:1px solid var(--line); border-left:2px solid var(--signal); background:var(--panel);
+    padding:10px 12px; border-radius:0 3px 3px 0; position:relative;
+  }
+  .cal-entry-text{ font-size:13px; color:var(--text-dim); padding-right:20px; word-break:break-word; }
+  .cal-entry-del{
+    position:absolute; top:8px; right:8px; background:none; border:none;
+    color:var(--text-faint); cursor:pointer; font-family:var(--mono); font-size:13px; line-height:1;
+  }
+  .cal-entry-del:hover{ color:var(--copper-bright); }
+  .cal-empty-note{ font-size:12.5px; color:var(--text-faint); font-style:italic; margin-top:14px; }
+  .cal-note{
+    margin-top:16px; font-size:11.5px; color:var(--text-faint); font-family:var(--mono);
+    border-top:1px solid var(--line); padding-top:12px; line-height:1.6;
+  }
+  .cal-note b{ color:var(--signal); }
+
+  footer{
+    border-top:1px solid var(--line); padding:26px 0; margin-top:20px;
+    font-family:var(--mono); font-size:11.5px; color:var(--text-faint);
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    * { transition:none !important; animation:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-inner">
+    <div class="nav-mark"><span class="dot"></span>AP // ECE</div>
+    <a class="back-link" href="index.html">← Back to portfolio</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="page-head">
+    <div class="eyebrow">PM-VIKAS · IIIT Kottayam · IoT Internship</div>
+    <h1>PM-<span class="accent">VIKAS</span> Work Log</h1>
+    <p class="lede">
+      Daily build log for the IoT internship at the Indian Institute of Information Technology (IIIT) Kottayam,
+      under the PM-VIKAS skill-development scheme, Ministry of Minority Affairs, Government of India —
+      IoT architecture design, multi-sensor interfacing, I2C/UART protocols, and cloud monitoring frameworks.
+    </p>
+    <div class="meta-row">
+      <span class="meta-pill">Scheme: <b>PM-VIKAS</b></span>
+      <span class="meta-pill">Host: <b>IIIT Kottayam</b></span>
+      <span class="meta-pill">Duration: <b>Jun 2026 · 6 weeks</b></span>
+    </div>
+  </div>
+
+  <section id="worklog">
+    <div class="cal-shell">
+      <div class="cal-main">
+        <div class="cal-header">
+          <button class="cal-nav-btn" id="calPrev" aria-label="Previous month">‹</button>
+          <div class="cal-month" id="calMonthLabel"></div>
+          <button class="cal-nav-btn" id="calNext" aria-label="Next month">›</button>
+        </div>
+        <div class="cal-weekdays">
+          <div class="cal-wd">Su</div><div class="cal-wd">Mo</div><div class="cal-wd">Tu</div>
+          <div class="cal-wd">We</div><div class="cal-wd">Th</div><div class="cal-wd">Fr</div><div class="cal-wd">Sa</div>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+      <div class="cal-side">
+        <div class="cal-side-date" id="calSelectedLabel">Select a day</div>
+        <textarea class="cal-textarea" id="calInput" placeholder="What did you work on today? e.g. Interfaced DHT22 over I2C, pushed readings to the cloud dashboard..."></textarea>
+        <button class="cal-add-btn" id="calAddBtn">+ Log progress</button>
+        <div class="cal-entries" id="calEntries"></div>
+        <p class="cal-note">Entries save to <b>this browser</b> automatically (localStorage) — they'll be here next time you open this page on the same device/browser.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <span>© 2026 Antony Paul — Christ College of Engineering</span>
+  <a class="back-link" href="index.html">← Back to portfolio</a>
+</footer>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'pmvikas-worklog-entries';
+  const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+  let entries = {};
+  try{ entries = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+  catch(e){ entries = {}; }
+
+  function persist(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); }
+    catch(e){ /* storage unavailable — entries still work for this session */ }
+  }
+
+  const today = new Date();
+  let viewYear = today.getFullYear();
+  let viewMonth = today.getMonth(); // 0-indexed
+  let selectedKey = dateKey(today.getFullYear(), today.getMonth(), today.getDate());
+
+  const grid = document.getElementById('calGrid');
+  const monthLabel = document.getElementById('calMonthLabel');
+  const selectedLabel = document.getElementById('calSelectedLabel');
+  const input = document.getElementById('calInput');
+  const addBtn = document.getElementById('calAddBtn');
+  const entriesWrap = document.getElementById('calEntries');
+
+  function dateKey(y, m, d){
+    return y + '-' + String(m+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+  }
+
+  function formatSelected(key){
+    const [y,m,d] = key.split('-').map(Number);
+    const dt = new Date(y, m-1, d);
+    return dt.toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+  }
+
+  function renderMonth(){
+    monthLabel.innerHTML = MONTH_NAMES[viewMonth] + ' <span class="yr">' + viewYear + '</span>';
+    grid.innerHTML = '';
+
+    const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+    for(let i=0; i<firstDay; i++){
+      const filler = document.createElement('div');
+      filler.className = 'cal-day empty';
+      grid.appendChild(filler);
+    }
+
+    for(let d=1; d<=daysInMonth; d++){
+      const key = dateKey(viewYear, viewMonth, d);
+      const cell = document.createElement('div');
+      cell.className = 'cal-day';
+      if(key === dateKey(today.getFullYear(), today.getMonth(), today.getDate())) cell.classList.add('today');
+      if(key === selectedKey) cell.classList.add('selected');
+
+      const num = document.createElement('span');
+      num.textContent = d;
+      cell.appendChild(num);
+
+      if(entries[key] && entries[key].length){
+        const dot = document.createElement('span');
+        dot.className = 'cal-day-dot';
+        cell.appendChild(dot);
+      }
+
+      cell.addEventListener('click', () => {
+        selectedKey = key;
+        renderMonth();
+        renderEntries();
+      });
+
+      grid.appendChild(cell);
+    }
+  }
+
+  function renderEntries(){
+    selectedLabel.textContent = formatSelected(selectedKey);
+    entriesWrap.innerHTML = '';
+    const list = entries[selectedKey] || [];
+
+    if(!list.length){
+      const empty = document.createElement('p');
+      empty.className = 'cal-empty-note';
+      empty.textContent = 'No progress logged for this day yet.';
+      entriesWrap.appendChild(empty);
+      return;
+    }
+
+    list.forEach((entry, idx) => {
+      const item = document.createElement('div');
+      item.className = 'cal-entry';
+
+      const del = document.createElement('button');
+      del.className = 'cal-entry-del';
+      del.textContent = '×';
+      del.setAttribute('aria-label', 'Delete entry');
+      del.addEventListener('click', () => {
+        entries[selectedKey].splice(idx, 1);
+        persist();
+        renderMonth();
+        renderEntries();
+      });
+
+      const text = document.createElement('div');
+      text.className = 'cal-entry-text';
+      text.textContent = entry.text;
+
+      item.appendChild(del);
+      item.appendChild(text);
+      entriesWrap.appendChild(item);
+    });
+  }
+
+  addBtn.addEventListener('click', () => {
+    const val = input.value.trim();
+    if(!val) return;
+    if(!entries[selectedKey]) entries[selectedKey] = [];
+    entries[selectedKey].push({ text: val, time: new Date().toISOString() });
+    persist();
+    input.value = '';
+    renderMonth();
+    renderEntries();
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter' && (e.metaKey || e.ctrlKey)){
+      addBtn.click();
+    }
+  });
+
+  document.getElementById('calPrev').addEventListener('click', () => {
+    viewMonth--;
+    if(viewMonth < 0){ viewMonth = 11; viewYear--; }
+    renderMonth();
+  });
+  document.getElementById('calNext').addEventListener('click', () => {
+    viewMonth++;
+    if(viewMonth > 11){ viewMonth = 0; viewYear++; }
+    renderMonth();
+  });
+
+  renderMonth();
+  renderEntries();
+})();
+</script>
+
+</body>
+</html>
