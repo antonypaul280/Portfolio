@@ -25,17 +25,23 @@
   *{box-sizing:border-box; margin:0; padding:0;}
   html{scroll-behavior:smooth;}
   body{
-    background:
-      radial-gradient(circle at 15% 0%, rgba(73,217,194,0.06), transparent 45%),
-      radial-gradient(circle at 90% 20%, rgba(201,146,47,0.05), transparent 40%),
-      var(--bg);
+    background:var(--bg);
     color:var(--text); font-family:var(--sans); line-height:1.6; min-height:100vh;
+    overflow-x:hidden;
   }
   a{color:inherit;}
   ::selection{background:var(--copper); color:#0a1512;}
   :focus-visible{ outline:2px solid var(--signal); outline-offset:3px; }
 
-  .wrap{ max-width:960px; margin:0 auto; padding:0 24px; }
+  .grain-overlay{
+    position:fixed; inset:0; pointer-events:none; z-index:1;
+    background:radial-gradient(ellipse at 20% 0%, rgba(73,217,194,0.05), transparent 55%),
+               radial-gradient(ellipse at 80% 100%, rgba(201,146,47,0.06), transparent 55%);
+  }
+  #ripple-bg{ position:fixed; inset:0; z-index:0; background:var(--bg); }
+  #ripple-bg canvas{ display:block; width:100%; height:100%; }
+
+  .wrap{ max-width:960px; margin:0 auto; padding:0 24px; position:relative; z-index:2; }
 
   header.nav{
     position:sticky; top:0; z-index:50; backdrop-filter:blur(10px);
@@ -161,6 +167,9 @@
 </head>
 <body>
 
+<div id="ripple-bg"></div>
+<div class="grain-overlay"></div>
+
 <header class="nav">
   <div class="nav-inner">
     <div class="nav-mark"><span class="dot"></span>AP // ECE</div>
@@ -203,7 +212,7 @@
         <textarea class="cal-textarea" id="calInput" placeholder="What did you work on today? e.g. Interfaced DHT22 over I2C, pushed readings to the cloud dashboard..."></textarea>
         <button class="cal-add-btn" id="calAddBtn">+ Log progress</button>
         <div class="cal-entries" id="calEntries"></div>
-        <p class="cal-note">Entries save to <b>this browser</b> automatically (localStorage) — they'll be here next time you open this page on the same device/browser.</p>
+        <p class="cal-note">Synced live via <b>Firestore</b> — entries persist and show the same from any device or browser.</p>
       </div>
     </div>
   </section>
@@ -214,23 +223,230 @@
   <a class="back-link" href="index.html">← Back to portfolio</a>
 </footer>
 
-<script>
+<script type="module">
+import { Renderer, Program, Triangle, Mesh } from 'https://cdn.jsdelivr.net/npm/ogl@1.0.6/+esm';
+
 (function(){
-  const STORAGE_KEY = 'pmvikas-worklog-entries';
+  const container = document.getElementById('ripple-bg');
+  if(!container) return;
+
+  const cfg = {
+    enableRainbow: false,
+    gridColor: '#49d9c2',
+    rippleIntensity: 0.05,
+    gridSize: 14.0,
+    gridThickness: 30.0,
+    fadeDistance: 3.0,
+    vignetteStrength: 0.8,
+    glowIntensity: 0.08,
+    opacity: 0.3,
+    gridRotation: 0,
+    mouseInteraction: true,
+    mouseInteractionRadius: 0.8
+  };
+
+  const hexToRgb = hex => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result
+      ? [parseInt(result[1], 16) / 255, parseInt(result[2], 16) / 255, parseInt(result[3], 16) / 255]
+      : [1, 1, 1];
+  };
+
+  const renderer = new Renderer({ dpr: Math.min(window.devicePixelRatio, 2), alpha: true });
+  const gl = renderer.gl;
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.canvas.style.width = '100%';
+  gl.canvas.style.height = '100%';
+  container.appendChild(gl.canvas);
+
+  const vert = `
+attribute vec2 position;
+varying vec2 vUv;
+void main() {
+    vUv = position * 0.5 + 0.5;
+    gl_Position = vec4(position, 0.0, 1.0);
+}`;
+
+  const frag = `precision highp float;
+uniform float iTime;
+uniform vec2 iResolution;
+uniform bool enableRainbow;
+uniform vec3 gridColor;
+uniform float rippleIntensity;
+uniform float gridSize;
+uniform float gridThickness;
+uniform float fadeDistance;
+uniform float vignetteStrength;
+uniform float glowIntensity;
+uniform float opacity;
+uniform float gridRotation;
+uniform bool mouseInteraction;
+uniform vec2 mousePosition;
+uniform float mouseInfluence;
+uniform float mouseInteractionRadius;
+varying vec2 vUv;
+
+float pi = 3.141592;
+
+mat2 rotate(float angle) {
+    float s = sin(angle);
+    float c = cos(angle);
+    return mat2(c, -s, s, c);
+}
+
+void main() {
+    vec2 uv = vUv * 2.0 - 1.0;
+    uv.x *= iResolution.x / iResolution.y;
+
+    if (gridRotation != 0.0) {
+        uv = rotate(gridRotation * pi / 180.0) * uv;
+    }
+
+    float dist = length(uv);
+    float func = sin(pi * (iTime - dist));
+    vec2 rippleUv = uv + uv * func * rippleIntensity;
+
+    if (mouseInteraction && mouseInfluence > 0.0) {
+        vec2 mouseUv = (mousePosition * 2.0 - 1.0);
+        mouseUv.x *= iResolution.x / iResolution.y;
+        float mouseDist = length(uv - mouseUv);
+
+        float influence = mouseInfluence * exp(-mouseDist * mouseDist / (mouseInteractionRadius * mouseInteractionRadius));
+
+        float mouseWave = sin(pi * (iTime * 2.0 - mouseDist * 3.0)) * influence;
+        rippleUv += normalize(uv - mouseUv) * mouseWave * rippleIntensity * 0.3;
+    }
+
+    vec2 a = sin(gridSize * 0.5 * pi * rippleUv - pi / 2.0);
+    vec2 b = abs(a);
+
+    float aaWidth = 0.5;
+    vec2 smoothB = vec2(
+        smoothstep(0.0, aaWidth, b.x),
+        smoothstep(0.0, aaWidth, b.y)
+    );
+
+    vec3 color = vec3(0.0);
+    color += exp(-gridThickness * smoothB.x * (0.8 + 0.5 * sin(pi * iTime)));
+    color += exp(-gridThickness * smoothB.y);
+    color += 0.5 * exp(-(gridThickness / 4.0) * sin(smoothB.x));
+    color += 0.5 * exp(-(gridThickness / 3.0) * smoothB.y);
+
+    if (glowIntensity > 0.0) {
+        color += glowIntensity * exp(-gridThickness * 0.5 * smoothB.x);
+        color += glowIntensity * exp(-gridThickness * 0.5 * smoothB.y);
+    }
+
+    float ddd = 1.0;
+    float vignette = 1.0;
+
+    vec3 t;
+    if (enableRainbow) {
+        t = vec3(
+            uv.x * 0.5 + 0.5 * sin(iTime),
+            uv.y * 0.5 + 0.5 * cos(iTime),
+            pow(cos(iTime), 4.0)
+        ) + 0.5;
+    } else {
+        t = gridColor;
+    }
+
+    float finalFade = ddd * vignette;
+    float alpha = length(color) * finalFade * opacity;
+    gl_FragColor = vec4(color * t * finalFade * opacity, alpha);
+}`;
+
+  const uniforms = {
+    iTime: { value: 0 },
+    iResolution: { value: [1, 1] },
+    enableRainbow: { value: cfg.enableRainbow },
+    gridColor: { value: hexToRgb(cfg.gridColor) },
+    rippleIntensity: { value: cfg.rippleIntensity },
+    gridSize: { value: cfg.gridSize },
+    gridThickness: { value: cfg.gridThickness },
+    fadeDistance: { value: cfg.fadeDistance },
+    vignetteStrength: { value: cfg.vignetteStrength },
+    glowIntensity: { value: cfg.glowIntensity },
+    opacity: { value: cfg.opacity },
+    gridRotation: { value: cfg.gridRotation },
+    mouseInteraction: { value: cfg.mouseInteraction },
+    mousePosition: { value: [0.5, 0.5] },
+    mouseInfluence: { value: 0 },
+    mouseInteractionRadius: { value: cfg.mouseInteractionRadius }
+  };
+
+  const geometry = new Triangle(gl);
+  const program = new Program(gl, { vertex: vert, fragment: frag, uniforms });
+  const mesh = new Mesh(gl, { geometry, program });
+
+  const mousePositionRef = { x: 0.5, y: 0.5 };
+  const targetMouseRef = { x: 0.5, y: 0.5 };
+  let mouseInfluenceTarget = 0;
+
+  const resize = () => {
+    const w = container.clientWidth, h = container.clientHeight;
+    renderer.setSize(w, h);
+    uniforms.iResolution.value = [w, h];
+  };
+
+  const handleMouseMove = e => {
+    if (!cfg.mouseInteraction) return;
+    const rect = container.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = 1.0 - (e.clientY - rect.top) / rect.height;
+    targetMouseRef.x = x;
+    targetMouseRef.y = y;
+  };
+
+  window.addEventListener('resize', resize);
+  window.addEventListener('mousemove', handleMouseMove);
+  mouseInfluenceTarget = 1.0;
+  resize();
+
+  const render = t => {
+    uniforms.iTime.value = t * 0.001;
+
+    const lerpFactor = 0.1;
+    mousePositionRef.x += (targetMouseRef.x - mousePositionRef.x) * lerpFactor;
+    mousePositionRef.y += (targetMouseRef.y - mousePositionRef.y) * lerpFactor;
+
+    uniforms.mouseInfluence.value += (mouseInfluenceTarget - uniforms.mouseInfluence.value) * 0.05;
+    uniforms.mousePosition.value = [mousePositionRef.x, mousePositionRef.y];
+
+    renderer.render({ scene: mesh });
+    requestAnimationFrame(render);
+  };
+  requestAnimationFrame(render);
+})();
+</script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDr2fFspvg_L8kEQpQi3PwykSn_nHLDpZs",
+  authDomain: "portfolio-website-databa-f4dca.firebaseapp.com",
+  projectId: "portfolio-website-databa-f4dca",
+  storageBucket: "portfolio-website-databa-f4dca.firebasestorage.app",
+  messagingSenderId: "745051305094",
+  appId: "1:745051305094:web:e494db1256fda10e0dcd07"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const worklogCol = collection(db, "pmvikas-worklog");
+
+(function(){
   const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-
   let entries = {};
-  try{ entries = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
-  catch(e){ entries = {}; }
-
-  function persist(){
-    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); }
-    catch(e){ /* storage unavailable — entries still work for this session */ }
-  }
 
   const today = new Date();
   let viewYear = today.getFullYear();
-  let viewMonth = today.getMonth(); // 0-indexed
+  let viewMonth = today.getMonth();
   let selectedKey = dateKey(today.getFullYear(), today.getMonth(), today.getDate());
 
   const grid = document.getElementById('calGrid');
@@ -303,7 +519,7 @@
       return;
     }
 
-    list.forEach((entry, idx) => {
+    list.forEach((entry) => {
       const item = document.createElement('div');
       item.className = 'cal-entry';
 
@@ -312,10 +528,7 @@
       del.textContent = '×';
       del.setAttribute('aria-label', 'Delete entry');
       del.addEventListener('click', () => {
-        entries[selectedKey].splice(idx, 1);
-        persist();
-        renderMonth();
-        renderEntries();
+        deleteDoc(doc(db, 'pmvikas-worklog', entry.id));
       });
 
       const text = document.createElement('div');
@@ -331,12 +544,8 @@
   addBtn.addEventListener('click', () => {
     const val = input.value.trim();
     if(!val) return;
-    if(!entries[selectedKey]) entries[selectedKey] = [];
-    entries[selectedKey].push({ text: val, time: new Date().toISOString() });
-    persist();
+    addDoc(worklogCol, { date: selectedKey, text: val, time: new Date().toISOString() });
     input.value = '';
-    renderMonth();
-    renderEntries();
   });
 
   input.addEventListener('keydown', (e) => {
@@ -354,6 +563,18 @@
     viewMonth++;
     if(viewMonth > 11){ viewMonth = 0; viewYear++; }
     renderMonth();
+  });
+
+  const q = query(worklogCol, orderBy('time', 'asc'));
+  onSnapshot(q, (snapshot) => {
+    entries = {};
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      if(!entries[data.date]) entries[data.date] = [];
+      entries[data.date].push({ id: docSnap.id, text: data.text, time: data.time });
+    });
+    renderMonth();
+    renderEntries();
   });
 
   renderMonth();
