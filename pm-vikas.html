@@ -440,6 +440,24 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const worklogCol = collection(db, "pmvikas-worklog");
 
+const PASS_HASH = "7146dc05b72f5d38d920cee934cc605dd79967cee562ca333e7e3af9efae8215";
+async function sha256(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+async function isAuthed(){
+  if(sessionStorage.getItem('pmvikas-auth') === '1') return true;
+  const pw = prompt('Password to edit log:');
+  if(pw === null) return false;
+  const hash = await sha256(pw);
+  if(hash === PASS_HASH){
+    sessionStorage.setItem('pmvikas-auth', '1');
+    return true;
+  }
+  alert('Wrong password.');
+  return false;
+}
+
 (function(){
   const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   let entries = {};
@@ -527,7 +545,8 @@ const worklogCol = collection(db, "pmvikas-worklog");
       del.className = 'cal-entry-del';
       del.textContent = '×';
       del.setAttribute('aria-label', 'Delete entry');
-      del.addEventListener('click', () => {
+      del.addEventListener('click', async () => {
+        if(!(await isAuthed())) return;
         deleteDoc(doc(db, 'pmvikas-worklog', entry.id));
       });
 
@@ -541,9 +560,10 @@ const worklogCol = collection(db, "pmvikas-worklog");
     });
   }
 
-  addBtn.addEventListener('click', () => {
+  addBtn.addEventListener('click', async () => {
     const val = input.value.trim();
     if(!val) return;
+    if(!(await isAuthed())) return;
     addDoc(worklogCol, { date: selectedKey, text: val, time: new Date().toISOString() });
     input.value = '';
   });
