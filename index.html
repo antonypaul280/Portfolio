@@ -105,6 +105,44 @@
 
   /* ---------- HERO ---------- */
   .hero{ padding:96px 0 80px; position:relative; }
+  .hero-grid{ display:grid; grid-template-columns:1fr; gap:48px; align-items:center; }
+  @media (min-width:900px){ .hero-grid{ grid-template-columns:1fr 300px; } }
+
+  /* ---------- PROFILE CARD ---------- */
+  .pc-wrap{ perspective:900px; width:100%; max-width:280px; margin:0 auto; }
+  @media (max-width:899px){ .pc-wrap{ max-width:220px; } }
+  .pc-card{
+    position:relative; aspect-ratio:0.78; border-radius:20px; overflow:hidden;
+    background:var(--panel);
+    backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+    border:1px solid var(--line);
+    box-shadow:0 24px 48px rgba(0,0,0,0.5);
+    transform:rotateX(0deg) rotateY(0deg);
+    transition:transform .5s ease;
+    will-change:transform;
+  }
+  .pc-card.active{ transition:none; }
+  .pc-avatar{
+    position:absolute; inset:0; width:100%; height:100%;
+    object-fit:cover; object-position:top center;
+  }
+  .pc-info{
+    position:absolute; left:12px; right:12px; bottom:12px;
+    display:flex; align-items:center; justify-content:space-between;
+    background:rgba(10,21,18,0.6);
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    border:1px solid var(--line); border-radius:12px; padding:10px 12px;
+  }
+  .pc-left{ display:flex; align-items:center; gap:8px; }
+  .pc-dot{ width:7px; height:7px; border-radius:50%; background:var(--signal); box-shadow:0 0 6px var(--signal); }
+  .pc-handle{ font-family:var(--mono); font-size:12px; color:var(--text); }
+  .pc-status{ font-family:var(--mono); font-size:10.5px; color:var(--text-dim); }
+  .pc-btn{
+    font-family:var(--mono); font-size:10.5px; color:#0a1512;
+    background:var(--copper-bright); border:none; border-radius:6px;
+    padding:7px 11px; cursor:pointer; font-weight:600;
+  }
+  .pc-btn:hover{ filter:brightness(1.1); }
   .hero-eyebrow{
     font-family:var(--mono); font-size:12.5px; color:var(--signal);
     letter-spacing:0.12em; margin-bottom:18px; display:flex; align-items:center; gap:10px;
@@ -308,25 +346,45 @@
 
   <!-- HERO -->
   <section class="hero" id="top">
-    <div class="hero-eyebrow">FINAL-YEAR B.TECH · ELECTRONICS &amp; COMMUNICATION</div>
-    <h1 class="name">Antony <span class="surname">Paul</span></h1>
-    <p class="role">Embedded systems &amp; IoT builder — microcontrollers, sensor fusion, and the firmware that connects them to the cloud.</p>
-    <p class="summary">
-      Third-year (final-year track) Electronics &amp; Communication Engineering student specialising in embedded systems, IoT frameworks, and digital hardware. Currently in advanced IoT training at IIIT Kottayam under a Government of India flagship scheme, with hands-on exposure to automated system design, sensor fusion, and real-time data diagnostics.
-    </p>
-    <div class="contact-row">
-      <span class="pill">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-        Thrissur, Kerala, India
-      </span>
-      <span class="pill">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .3 2 .7 3a2 2 0 0 1-.4 2.1L8 10.5a16 16 0 0 0 6 6l1.6-1.6a2 2 0 0 1 2-.5c1 .4 2 .6 3 .7a2 2 0 0 1 1.7 2Z"/></svg>
-        +91 90618 84897
-      </span>
-      <span class="pill">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
-        antonypaul23ec@cce.edu.in
-      </span>
+    <div class="hero-grid">
+      <div class="hero-text">
+        <div class="hero-eyebrow">FINAL-YEAR B.TECH · ELECTRONICS &amp; COMMUNICATION</div>
+        <h1 class="name">Antony <span class="surname">Paul</span></h1>
+        <p class="role">Embedded systems &amp; IoT builder — microcontrollers, sensor fusion, and the firmware that connects them to the cloud.</p>
+        <p class="summary">
+          Third-year (final-year track) Electronics &amp; Communication Engineering student specialising in embedded systems, IoT frameworks, and digital hardware. Currently in advanced IoT training at IIIT Kottayam under a Government of India flagship scheme, with hands-on exposure to automated system design, sensor fusion, and real-time data diagnostics.
+        </p>
+        <div class="contact-row">
+          <span class="pill">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            Thrissur, Kerala, India
+          </span>
+          <span class="pill">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .3 2 .7 3a2 2 0 0 1-.4 2.1L8 10.5a16 16 0 0 0 6 6l1.6-1.6a2 2 0 0 1 2-.5c1 .4 2 .6 3 .7a2 2 0 0 1 1.7 2Z"/></svg>
+            +91 90618 84897
+          </span>
+          <span class="pill">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
+            antonypaul23ec@cce.edu.in
+          </span>
+        </div>
+      </div>
+
+      <div class="pc-wrap" id="pcWrap">
+        <div class="pc-card" id="pcCard">
+          <img class="pc-avatar" src="assets/avatar.png" alt="Antony Paul">
+          <div class="pc-info">
+            <div class="pc-left">
+              <div class="pc-dot"></div>
+              <div>
+                <div class="pc-handle">Antony Paul</div>
+                <div class="pc-status">Online</div>
+              </div>
+            </div>
+            <button class="pc-btn" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Contact</button>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -736,5 +794,26 @@ void main() {
 })();
 </script>
 
+<script>
+(function(){
+  const wrap = document.getElementById('pcWrap');
+  const card = document.getElementById('pcCard');
+  if(!wrap || !card) return;
+  const MAX = 10;
+  wrap.addEventListener('pointermove', e => {
+    const r = card.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width;
+    const y = (e.clientY - r.top) / r.height;
+    const rx = (0.5 - y) * MAX;
+    const ry = (x - 0.5) * MAX;
+    card.classList.add('active');
+    card.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+  });
+  wrap.addEventListener('pointerleave', () => {
+    card.classList.remove('active');
+    card.style.transform = 'rotateX(0deg) rotateY(0deg)';
+  });
+})();
+</script>
 </body>
 </html>
